@@ -1,0 +1,7 @@
+<th:block th:fragment="display">
+    <span th:hx-get="@{/todos/edit-title/{id}(id=${todo.id})}" hx-target="this" hx-swap="outerHTML"
+        style="cursor:pointer">
+        <span th:text="${todo.title}">title</span>
+    </span>
+</th:block>
+

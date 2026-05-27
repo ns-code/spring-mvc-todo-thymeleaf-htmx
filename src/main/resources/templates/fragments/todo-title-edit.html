@@ -1,0 +1,8 @@
+<th:block th:fragment="edit">
+    <form th:hx-post="@{/todos/update-title/{id}(id=${todo.id})}"
+          hx-target="this"
+          hx-swap="outerHTML">
+        <input type="text" name="title" th:value="${todo.title}" autofocus>
+        <button type="submit">Save</button>
+    </form>
+</th:block>

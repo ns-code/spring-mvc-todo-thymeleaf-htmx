@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Todos</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link th:href="@{/webjars/bootstrap/5.3.8/css/bootstrap.min.css}" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script th:src="@{/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js}" defer></script>
+    <script src="https://unpkg.dev/htmx.org@2.0.10"></script>
+    <style>
+        .todo-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .todo-title-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .delete-mark {
+            display: none !important;
+            margin-left: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            vertical-align: -0.125em;
+        }
+
+        .todo-title-container:hover .delete-mark {
+            display: inline-block !important;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <div th:fragment="todos" class="todos-list">
+
+        <h2>
+            Todos
+        </h2>
+
+        <div th:each="todo : ${todos}" class="todo todo-item">
+            <span th:text="${todo.id}">ID</span> |
+            <div class="todo-title-container">
+                <span th:hx-get="@{/todos/edit-title/{id}(id=${todo.id})}" hx-target="this" hx-swap="outerHTML"
+                    style="cursor:pointer">
+                    <span th:text="${todo.title}">title</span>
+                </span>
+
+                <i class="bi bi-x-circle delete-mark" th:attr="hx-delete=@{/todos/{id}(id=${todo.id})}"
+                    hx-confirm="Are you sure?" hx-trigger="click" hx-target="closest .todo" title="Delete todo">
+                </i>
+
+            </div>
+        </div>
+
+    </div>
+
+
+    <div id="todos-form" th:fragment="todos-form" hx-swap-oob="true">
+
+        <h2>Add a Todo</h2>
+
+        <input type="text" name="new-todo" id="new-todo" />
+
+        <button class="btn btn-primary btn-sm" hx-post="/todos" hx-include="#new-todo" hx-target=".todos-list"
+            hx-trigger="click">Add </button>
+
+    </div>
+
+
+
+</body>
+
+</html>
