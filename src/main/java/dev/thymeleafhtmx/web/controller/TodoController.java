@@ -1,9 +1,10 @@
 package dev.thymeleafhtmx.web.controller;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.springframework.http.MediaType;
@@ -21,7 +22,6 @@ import org.springframework.web.servlet.view.FragmentsRendering;
 
 import dev.thymeleafhtmx.data.TodosDB;
 import dev.thymeleafhtmx.data.model.Todo;
-import io.github.wimdeblauwe.htmx.spring.boot.mvc.HtmxResponse;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/todos")
 class TodoController {
 
-    private Set<Todo> todos = new ConcurrentSkipListSet<>(Comparator.comparingInt(Todo::id));
+    private Set<Todo> todos = Collections.synchronizedSortedSet(new TreeSet<>(Comparator.comparingInt(Todo::id)));
 
     TodoController() {
         for (var t : "read a book, go to the gym, learn HATEOAS".split(","))
@@ -64,18 +64,24 @@ class TodoController {
             }
         }).collect(Collectors.toSet());
 
-        log.info(">> todos: {}", todos);                
+        log.info(">> todos: {}", todos);
         Todo todo = todos.stream().filter(t -> t.id().equals(id)).findFirst()
                 .orElseThrow();
         model.addAttribute("todo", todo);
-        return "fragments/todo-title-display :: display";
+        return "todos :: display";
     }
 
     @PostMapping
     FragmentsRendering add(@RequestParam("new-todo") String newTodo,
             Model model) {
+
         this.todos.add(TodosDB.todo(newTodo));
-        model.addAttribute("todos", this.todos);
+        // model.addAttribute("todos",
+        //         this.todos.stream()
+        //                 .sorted(Comparator.comparingInt(Todo::id))
+        //                 .toList());
+        model.addAttribute("todos", todos);
+
         return FragmentsRendering
                 .fragment("todos :: todos-form") // OOB swap
                 .fragment("todos :: todos") // Another OOB swap
@@ -85,10 +91,7 @@ class TodoController {
     @ResponseBody
     @DeleteMapping(produces = MediaType.TEXT_HTML_VALUE, path = "/{todoId}")
     String delete(@PathVariable Integer todoId) {
-        this.todos
-                .stream()
-                .filter(t -> t.id().equals(todoId))
-                .forEach(this.todos::remove);
+        todos.removeIf(t -> t.id().equals(todoId));
         return "";
     }
 }

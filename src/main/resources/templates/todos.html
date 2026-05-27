@@ -11,6 +11,16 @@
     <script th:src="@{/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js}" defer></script>
     <script src="https://unpkg.dev/htmx.org@2.0.10"></script>
     <style>
+        .usage {
+            background-color: lightgray;
+        }
+
+        .todos {
+            margin-top: 50px;
+            margin-left: 50px;
+            width: 50%;
+        }
+
         .todo-item {
             display: flex;
             align-items: center;
@@ -33,49 +43,60 @@
         .todo-title-container:hover .delete-mark {
             display: inline-block !important;
         }
+
+        .inline-edit-form {
+            display: inline;
+        }
     </style>
 </head>
 
 <body>
 
+    <div class="todos">
+        <div class="usage">
+            Usage:
+            <ol>
+                <li> Enter a todo item and Add </li>
+                <li> Click on a todo item text to edit and Save</li>
+                <li> Hover over the listed todo item to delete</li>
+            </ol>
+        </div>
+        <div th:fragment="todos" class="todos-list">
 
-    <div th:fragment="todos" class="todos-list">
+            <h2>
+                Todos
+            </h2>
 
-        <h2>
-            Todos
-        </h2>
+            <div th:each="todo : ${todos}" class="todo todo-item">
+                <span th:text="${todo.id}">ID</span> |
+                <div class="todo-title-container">
 
-        <div th:each="todo : ${todos}" class="todo todo-item">
-            <span th:text="${todo.id}">ID</span> |
-            <div class="todo-title-container">
-                <span th:hx-get="@{/todos/edit-title/{id}(id=${todo.id})}" hx-target="this" hx-swap="outerHTML"
-                    style="cursor:pointer">
-                    <span th:text="${todo.title}">title</span>
-                </span>
+                    <span th:fragment="display">
+                        <span th:hx-get="@{/todos/edit-title/{id}(id=${todo.id})}" hx-target="this" hx-swap="outerHTML"
+                            style="cursor:pointer">
+                            <span th:text="${todo.title}">title</span>
+                        </span>
+                    </span>
 
-                <i class="bi bi-x-circle delete-mark" th:attr="hx-delete=@{/todos/{id}(id=${todo.id})}"
-                    hx-confirm="Are you sure?" hx-trigger="click" hx-target="closest .todo" title="Delete todo">
-                </i>
+                    <span>
+                        <i class="bi bi-x-circle delete-mark" th:attr="hx-delete=@{/todos/{id}(id=${todo.id})}"
+                            hx-confirm="Are you sure?" hx-trigger="click" hx-target="closest .todo" title="Delete todo">
+                        </i>
+                    </span>
 
+                </div>
             </div>
+
         </div>
 
+        <div id="todos-form" th:fragment="todos-form" hx-swap-oob="true">
+            <h2>Add a Todo</h2>
+            <form hx-post="/todos" hx-target=".todos-list">
+                <input type="text" name="new-todo" id="new-todo" required>
+                <button class="btn btn-primary btn-sm">Add</button>
+            </form>
+        </div>
     </div>
-
-
-    <div id="todos-form" th:fragment="todos-form" hx-swap-oob="true">
-
-        <h2>Add a Todo</h2>
-
-        <input type="text" name="new-todo" id="new-todo" />
-
-        <button class="btn btn-primary btn-sm" hx-post="/todos" hx-include="#new-todo" hx-target=".todos-list"
-            hx-trigger="click">Add </button>
-
-    </div>
-
-
-
 </body>
 
 </html>
