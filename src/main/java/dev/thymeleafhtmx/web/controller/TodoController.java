@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
 
 import org.springframework.http.MediaType;
@@ -17,7 +16,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.view.FragmentsRendering;
 
 import dev.thymeleafhtmx.data.TodosDB;
@@ -76,10 +74,6 @@ class TodoController {
             Model model) {
 
         this.todos.add(TodosDB.todo(newTodo));
-        // model.addAttribute("todos",
-        //         this.todos.stream()
-        //                 .sorted(Comparator.comparingInt(Todo::id))
-        //                 .toList());
         model.addAttribute("todos", todos);
 
         return FragmentsRendering
@@ -88,10 +82,14 @@ class TodoController {
                 .build();
     }
 
-    @ResponseBody
+    // @ResponseBody
     @DeleteMapping(produces = MediaType.TEXT_HTML_VALUE, path = "/{todoId}")
-    String delete(@PathVariable Integer todoId) {
+    FragmentsRendering delete(@PathVariable Integer todoId, Model model) {
         todos.removeIf(t -> t.id().equals(todoId));
-        return "";
+        log.info(">> todos: {}", todos);
+        model.addAttribute("todos", todos);
+        return FragmentsRendering
+                .fragment("todos :: todos") // Another OOB swap
+                .build();
     }
 }
