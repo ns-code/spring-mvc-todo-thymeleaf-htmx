@@ -83,7 +83,7 @@ class TodosPlaywrightTest {
             page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Delete")).click();
 
             goForRun.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
-            assertThat(page.getByText("two").isVisible()).isFalse();
+            assertThat(page.getByText("two updated").isVisible()).isFalse();
             assertThat(goForRun.isVisible()).isTrue();
             assertThat(goToGym.isVisible()).isTrue();
         }
