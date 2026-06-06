@@ -62,41 +62,49 @@
                 <li> Hover over the listed todo item to delete</li>
             </ol>
         </div>
-        <div th:fragment="todos" class="todos-list">
 
-            <h2>
-                Todos
-            </h2>
-
-            <div  th:fragment="todoitems" th:each="todo : ${todos}" class="todo todo-items">
-                <div  class="">
-                    <span th:text="${todo.id}">ID</span> |
-                    <div th:class="|todo-title-container  todo-item-${todo.id}|">
-
-                        <span th:fragment="display">
-                            <span th:hx-get="@{/todos/edit-title/{id}(id=${todo.id})}" hx-target="this" hx-swap="outerHTML"
-                                style="cursor:pointer">
-                                <span th:text="${todo.title}">title</span>
-                            </span>
-                        </span>
-                        <span>
-                            <i class="bi bi-x-circle delete-mark" th:data-todo-id="${todo.id}"
-                                onclick="openDeleteModal(this)" title="Delete todo">
-                            </i>
-                        </span>                    
-
-                    </div>
-                </div>
-            </div>
-
+        <h2>
+            Todos
+        </h2>
+        <div id="categoryFilterContainer">
+            Categories: <select id="categoryFilter" name="categoryId" hx-get="/todos/selectedCategory"
+                hx-target=".todo-items" hx-trigger="change">
+                <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.name}"
+                    th:selected="${cat.id == selectedCategoryId}">Category</option>
+            </select>
         </div>
 
-        <div id="todos-form" th:fragment="todos-form" hx-swap-oob="true">
-            <h2>Add a Todo</h2>
-            <form hx-post="/todos" hx-target=".todos-list">
-                <input type="text" name="new-todo" id="new-todo" required>
-                <button class="btn btn-primary btn-sm">Add</button>
-            </form>
+        <div class="todo todo-items" id="todoItemsContainer">
+            <div th:fragment="list-frag" th:each="todo : ${todos}" class="todo-itm">
+                <span th:text="${todo.id}">ID</span> |
+                <div th:class="|todo-title-container  todo-item-${todo.id}|">
+
+                    <span th:fragment="display">
+                        <span class="display-todo" th:hx-get="@{/todos/edit-title/{id}(id=${todo.id})}" hx-target="this"
+                            hx-swap="outerHTML" style="cursor:pointer">
+                            <span th:text="${todo.title}">title</span>
+                        </span>
+                    </span>
+                    <span>
+                        <i class="bi bi-x-circle delete-mark" th:data-todo-id="${todo.id}"
+                            onclick="openDeleteModal(this)" title="Delete todo">
+                        </i>
+                    </span>
+
+                </div>
+            </div>
+        </div>
+
+        <h2>Add a Todo</h2>
+        <div id="addTodoContainer">
+            <div id="todos-form" th:fragment="add-frag" hx-swap-oob="true">
+                <form hx-post="/todos" hx-target=".todo-items">
+                    <input type="hidden" name="categoryId" id="categoryId" th:fragment="selectedCategoryId"
+                        th:value="${selectedCategoryId}">
+                    <input type="text" name="new-todo" id="new-todo" th:value="${newTodo}" required>
+                    <button class="btn btn-primary btn-sm" id="add-todo-btn">Add</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -136,16 +144,14 @@
 
             // Fire HTMX delete request
             htmx.ajax('DELETE', `/todos/${todoIdToDelete}`, {
-                target: `.todos-list`, // -${todoIdToDelete}`,
-                swap: 'outerHTML'
+                target: '.todo-items',
+                swap: 'innerHTML'
             });
             // Close modal
             const modalEl = document.getElementById('confirmDeleteModal');
             bootstrap.Modal.getInstance(modalEl).hide();
         });
     </script>
-
-
 </body>
 
 </html>

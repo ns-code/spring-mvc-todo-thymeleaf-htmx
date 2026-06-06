@@ -34,8 +34,21 @@ dependencies {
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'com.microsoft.playwright:playwright:1.41.0'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+test {
+    testLogging {
+        events "passed", "failed", "skipped"
+        showStandardStreams = true
+        exceptionFormat "full"
+    }
+
+    afterTest { descriptor, result ->
+        println "Test: ${descriptor.name} - ${result.resultType}"
+    }
 }

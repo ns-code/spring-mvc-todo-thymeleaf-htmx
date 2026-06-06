@@ -2,6 +2,7 @@ package dev.thymeleafhtmx.web.controller;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.view.FragmentsRendering;
 
 import dev.thymeleafhtmx.data.TodosDB;
+import dev.thymeleafhtmx.data.model.Category;
 import dev.thymeleafhtmx.data.model.Todo;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,69 +29,72 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/todos")
 class TodoController {
 
-    private Set<Todo> todos = Collections.synchronizedSortedSet(new TreeSet<>(Comparator.comparingInt(Todo::id)));
-
-    TodoController() {
-        for (var t : "read a book, go to the gym, learn HATEOAS".split(","))
-            this.todos.add(TodosDB.todo(t));
+    public TodoController() {
+        TodosDB.initTodos();
     }
 
     @GetMapping
     String todos(Model model) {
-        model.addAttribute("todos", this.todos);
+        model.addAttribute("categories", TodosDB.getCategories());
+        model.addAttribute("todos", TodosDB.getTodosForCategoryId(1));
+        model.addAttribute("selectedCategoryId", 1);
         return "todos";
     }
 
     @GetMapping("/edit-title/{id}")
-    public String editTitle(@PathVariable Integer id, Model model) {
-        model.addAttribute("todo", todos.stream().filter(t -> t.id().equals(id)).findFirst().orElseThrow());
+    public String editTitle(@PathVariable("id") Integer id, Model model) {
+        model.addAttribute("todo", TodosDB.getTodoForId(id));
 
-        return "fragments/todo-title-edit :: edit";
+        return "fragments/todo-frags/edit-frag :: edit";
     }
 
     @PostMapping("/update-title/{id}")
-    public String updateTitle(@PathVariable Integer id,
-            @ModelAttribute("title") String title,
+    public String updateTitle(@PathVariable("id") Integer id,
+            @RequestParam("title") String title,
             Model model) {
 
         // update todos set with the new title, then return the updated todo to be
         // rendered in the edit form
-        todos = todos.stream().map(t -> {
-            if (t.id().equals(id)) {
-                return new Todo(t.id(), title);
-            } else {
-                return t;
-            }
-        }).collect(Collectors.toSet());
+        Todo updatedTodo = TodosDB.updateTodoForId(id, title);
 
-        log.info(">> todos: {}", todos);
-        Todo todo = todos.stream().filter(t -> t.id().equals(id)).findFirst()
-                .orElseThrow();
-        model.addAttribute("todo", todo);
+        model.addAttribute("todo", updatedTodo);
         return "todos :: display";
     }
 
     @PostMapping
-    FragmentsRendering add(@RequestParam("new-todo") String newTodo,
+    FragmentsRendering add(@RequestParam("new-todo") String newTodo, @RequestParam("categoryId") Integer categoryId,
             Model model) {
-
-        this.todos.add(TodosDB.todo(newTodo));
-        model.addAttribute("todos", todos);
-
+        Category category = TodosDB.getCategoryById(categoryId);
+        TodosDB.addTodo(TodosDB.todo(newTodo, category));
+        model.addAttribute("todos", TodosDB.getTodosForCategoryId(categoryId));
+        model.addAttribute("newTodo", "");
+        model.addAttribute("selectedCategoryId", categoryId);
         return FragmentsRendering
-                .fragment("todos :: todos-form") // OOB swap
-                .fragment("todos :: todos") // Another OOB swap
+                .fragment("fragments/todo-frags/list-frag :: list-frag")
+                .fragment("todos :: add-frag")
                 .build();
     }
 
     // @ResponseBody
     @DeleteMapping(produces = MediaType.TEXT_HTML_VALUE, path = "/{todoId}")
-    FragmentsRendering delete(@PathVariable Integer todoId, Model model) {
-        todos.removeIf(t -> t.id().equals(todoId));
-        log.info(">> todos: {}", todos);
-        model.addAttribute("todos", todos);
+    FragmentsRendering delete(@PathVariable("todoId") Integer todoId, Model model) {
+        Todo todo = TodosDB.getTodoForId(todoId);
+        Integer selectedCategoryId = todo.getCategory().getId();
+        TodosDB.deleteTodoForId(todoId);
+        log.info(">> todos: {}", TodosDB.getTodosForCategoryId(todo.getCategory().getId()));
+        model.addAttribute("todos", TodosDB.getTodosForCategoryId(selectedCategoryId));
         return FragmentsRendering
-                .fragment("todos :: todos") // Another OOB swap
+                .fragment("fragments/todo-frags/list-frag :: list-frag")
                 .build();
     }
+
+    @GetMapping("/selectedCategory")
+    public FragmentsRendering selectedCategory(@RequestParam("categoryId") Integer categoryId, Model model) {
+        model.addAttribute("selectedCategoryId", categoryId);
+        model.addAttribute("todos", TodosDB.getTodosForCategoryId(categoryId));
+        return FragmentsRendering
+                .fragment("fragments/todo-frags/list-frag :: list-frag")
+                .fragment("fragments/todo-frags/add-frag :: add-frag")
+                .build();
+    }    
 }
